@@ -1,0 +1,187 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                  ULTIMATE MINECRAFT SERVER (GitHub Actions)
+                  Created by @GamingBurst007 (Discord/Insta)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  WHAT IS THIS?
+  A GitHub Actions workflow that runs a FREE Minecraft server on GitHub's
+  infrastructure. It uses Playit.gg for tunneling (no port forwarding),
+  caches plugins/jars for fast startup, auto-downloads plugins from
+  Modrinth, and backs up your world to cloud storage.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. HOW IT WORKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  1. Manual trigger (workflow_dispatch)                      │
+  │  2. Sets up Java 25, Playit tunnel, rclone, jq              │
+  │  3. Restores backup from cloud storage (worlds + configs)   │
+  │  4. Configures server (Paper 26.1.2) with bukkit/spigot/   │
+  │     paper YMLs, seed, anti-xray, end portal toggle          │
+  │  5. Restores cached Paper jar & plugins for fast startup    │
+  │  6. If cache miss: downloads from Modrinth (plugins.txt)    │
+  │     + copies plugins/ folder from repo                      │
+  │  7. Configures DiscordSRV, Geyser-Spigot, UltimateTeams     │
+  │  8. Starts Playit tunnel → gives public IP                  │
+  │  9. Starts Minecraft with 6GB RAM, optimized JVM flags      │
+  │ 10. Runs for 5.5 hours (within GitHub's 6h limit)           │
+  │ 11. In-game countdown warnings at 30m, 1m, 15s             │
+  │ 12. Auto-backup worlds + plugin data to cloud storage       │
+  │ 13. Triggers next workflow run → infinite loop              │
+  └─────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  2. MAIN FEATURES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ★ 100% FREE - runs on GitHub Actions free tier
+  ★ No port forwarding - uses Playit.gg tunnel for public access
+  ★ Java + Bedrock support via Geyser-Spigot
+  ★ Discord chat bridge via DiscordSRV
+  ★ Auto-plugin download from Modrinth (just paste IDs in plugins.txt)
+  ★ GitHub Actions cache for Paper jar + plugins (faster startup)
+  ★ Cloud storage backup (worlds survive server restarts)
+  ★ Auto-restart loop (24/7 server)
+  ★ 5.5-hour timer with in-game warnings
+  ★ Seed control (private seed for new worlds)
+  ★ Anti-Xray toggle (chest/ore protection)
+  ★ TNT duplication support (piston duping)
+  ★ Custom resource packs (Java + Bedrock)
+  ★ Timezone fix (IST) to prevent desync with Playit/Java
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  3. CURRENT SETUP (Google Drive)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Currently backups are stored on Google Drive using rclone.
+  Required GitHub Secret:
+    - GDRIVE_CONFIG  →  Your rclone config for Google Drive
+
+  Google Drive gives 15GB free but has daily upload/download limits
+  and can be slow.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  4. MIGRATING TO CLOUDFLARE R2 (FULLY FREE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Cloudflare R2 is FREE with:
+    - 10GB storage
+    - Unlimited uploads & downloads (NO egress fees!)
+    - Works with rclone (S3-compatible)
+
+  ─── STEP 1: Create R2 Bucket ──────────────────────────────────────
+  1. Go to https://dash.cloudflare.com/ → R2
+  2. Click "Create bucket"
+  3. Name it: minecraft-server (or anything you like)
+  4. Keep region as Automatic
+
+  ─── STEP 2: Get API Credentials ───────────────────────────────────
+  1. In R2 dashboard, click "Manage R2 API Tokens"
+  2. Click "Create API Token"
+  3. Permissions: Read + Write
+  4. Copy these (shown only once!):
+     - Access Key ID
+     - Secret Access Key
+  5. Also note your bucket's S3 endpoint:
+     https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+     (ACCOUNT_ID is in your Cloudflare dashboard URL)
+
+  ─── STEP 3: Add GitHub Secrets ────────────────────────────────────
+  Go to your repo → Settings → Secrets and variables → Actions → Add:
+
+  ┌─────────────────────┬──────────────────────────────────────┐
+  │ Secret Name         │ Value                                │
+  ├─────────────────────┼──────────────────────────────────────┤
+  │ R2_ACCESS_KEY       │ (your Access Key ID)                 │
+  │ R2_SECRET_KEY       │ (your Secret Access Key)             │
+  │ R2_ENDPOINT         │ https://<ACCOUNT_ID>.r2.cloudflare-  │
+  │                     │   storage.com                        │
+  │ R2_BUCKET           │ minecraft-server                     │
+  └─────────────────────┴──────────────────────────────────────┘
+
+  ─── STEP 4: Update main.yml ───────────────────────────────────────
+  Replace the Google Drive config step with R2:
+
+  ```
+  - name: Configure Cloudflare R2
+    env:
+      R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
+      R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
+      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+    run: |
+      mkdir -p ~/.config/rclone
+      cat > ~/.config/rclone/rclone.conf << EOF
+  [r2]
+  type = s3
+  provider = Cloudflare
+  access_key_id = $R2_ACCESS_KEY
+  secret_access_key = $R2_SECRET_KEY
+  endpoint = $R2_ENDPOINT
+  acl = private
+  EOF
+      echo "Cloudflare R2 Configured!"
+  ```
+
+  Then update Restore Backup & Backup steps to use "r2:bucket-name":
+
+  Restore (change gdrive → r2):
+  ```
+  rclone copy r2:${{ secrets.R2_BUCKET }}/backup.zip server/ || true
+  ```
+
+  Backup (add r2 alongside gdrive, or replace entirely):
+  ```
+  rclone copy backup.zip r2:${{ secrets.R2_BUCKET }}/
+  ```
+
+  ─── STEP 5: Remove GDRIVE_CONFIG (optional) ──────────────────────
+  Once everything is working on R2, you can delete the GDRIVE_CONFIG
+  secret from GitHub.
+
+  ─── WHY R2 OVER GDRIVE? ──────────────────────────────────────────
+  Feature          Google Drive          Cloudflare R2
+  ─────────────────────────────────────────────────────────────
+  Free storage     15GB                  10GB
+  Download limit   Yes (daily quota)     UNLIMITED
+  Upload limit     Yes                   UNLIMITED
+  Speed            Slow (throttled)      Fast (Cloudflare CDN)
+  rclone support   Yes (OAuth needed)    Yes (S3, simple keys)
+  Reliability      Can rate-limit        No rate limits
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  5. REQUIRED GITHUB SECRETS (full list)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  PLAYIT_SECRET    - Playit.gg agent secret (REQUIRED for tunnel)
+  GDRIVE_CONFIG    - rclone config for Google Drive (current backup)
+  DISCORD_TOKEN    - Discord bot token for DiscordSRV
+  SEED             - (optional) custom world seed
+  END_PORTAL       - (optional) true/false to enable/disable End
+  ANTI_XRAY        - (optional) true/false to enable/disable anti-xray
+
+  For R2 migration, add instead of GDRIVE_CONFIG:
+  R2_ACCESS_KEY    - Cloudflare R2 Access Key ID
+  R2_SECRET_KEY    - Cloudflare R2 Secret Access Key
+  R2_ENDPOINT      - Cloudflare R2 S3 endpoint URL
+  R2_BUCKET        - Cloudflare R2 bucket name
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  6. PLUGIN MANAGEMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Auto-download from Modrinth:
+    - Edit plugins.txt in the repo root
+    - Paste one Modrinth project ID per line
+    - The workflow fetches the latest RELEASE version automatically
+
+  Custom plugins from repo:
+    - Drop .jar files into the plugins/ folder
+    - These take precedence over Modrinth ones
+
+  Caching:
+    - Plugins are cached via GitHub Actions cache
+    - Cache key auto-busts when plugins.txt or plugins/ contents change
+    - On cache hit: startup is instant (no re-download)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
