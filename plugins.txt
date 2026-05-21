@@ -1,0 +1,7 @@
+# Modrinth Plugin IDs
+# Paste one project ID/slug per line. Lines starting with # are ignored.
+# The workflow auto-downloads the latest RELEASE version for each.
+#
+# Examples (uncomment to enable):
+# LJNGWSvH          # SomePlugin
+# AANobbMI          # AnotherPlugin

@@ -1,0 +1,8 @@
+# Server runtime
+server/
+playit_log.txt
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
