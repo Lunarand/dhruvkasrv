@@ -3,5 +3,5 @@
 # The workflow auto-downloads the latest RELEASE version for each.
 #
 # Examples (uncomment to enable):
-# LJNGWSvH          # SomePlugin
-# AANobbMI          # AnotherPlugin
+LJNGWSvH
+wKkoqHrH
