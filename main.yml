@@ -273,18 +273,24 @@ jobs:
           key: plugins-${{ hashFiles('plugins/**') }}-${{ hashFiles('plugins.txt') }}
 
       # 6. Configure Plugins (DiscordSRV & Bedrock Nether)
+      # NOTE: All config steps are safe — missing jars or empty tokens will NOT crash the server.
       - name: 🔧 Configure Plugins
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
         run: |
           if ls server/plugins/DiscordSRV*.jar 1> /dev/null 2>&1; then
             mkdir -p server/plugins/DiscordSRV
-            echo "BotToken: \"$DISCORD_TOKEN\"" > server/plugins/DiscordSRV/config.yml
-            echo "Channels: {\"global\": \"1479509091155054712\"}" >> server/plugins/DiscordSRV/config.yml
-            echo "DiscordConsoleChannelId: \"1479518082295664730\"" >> server/plugins/DiscordSRV/config.yml
-            echo "DiscordConsoleChannelLevels: [info]" >> server/plugins/DiscordSRV/config.yml
-            echo "ConfigVersion: 1.26.0" >> server/plugins/DiscordSRV/config.yml
-            echo "Experiment_JdbcAccountLinkBackend: true" >> server/plugins/DiscordSRV/config.yml
+            if [ -n "$DISCORD_TOKEN" ]; then
+              echo "BotToken: \"$DISCORD_TOKEN\"" > server/plugins/DiscordSRV/config.yml
+              echo "Channels: {\"global\": \"1479509091155054712\"}" >> server/plugins/DiscordSRV/config.yml
+              echo "DiscordConsoleChannelId: \"1479518082295664730\"" >> server/plugins/DiscordSRV/config.yml
+              echo "DiscordConsoleChannelLevels: [info]" >> server/plugins/DiscordSRV/config.yml
+              echo "ConfigVersion: 1.26.0" >> server/plugins/DiscordSRV/config.yml
+              echo "Experiment_JdbcAccountLinkBackend: true" >> server/plugins/DiscordSRV/config.yml
+              echo "  ✅ DiscordSRV configured"
+            else
+              echo "  ⏭️ DiscordSRV jar found but DISCORD_TOKEN not set — skipping config. Server runs without Discord bridge."
+            fi
           fi
 
           if ls server/plugins/Geyser-Spigot*.jar 1> /dev/null 2>&1; then
