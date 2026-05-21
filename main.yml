@@ -2,7 +2,7 @@
 # Code created and maintained by: @GamingBurst007 (Discord/Insta)
 # Please give credit if you use or copy this code!
 # ==========================================
-name: Ultimate Minecraft Server (Google Drive)
+name: Ultimate Minecraft Server (Hugging Face)
 
 on:
   workflow_dispatch: # Manual "Run" button
@@ -37,23 +37,29 @@ jobs:
           sudo apt-get install playit=0.15.26 jq zip unzip -y
           sudo -v ; curl https://rclone.org/install.sh | sudo bash
 
-      # 2. Connect to Google Drive
-      - name: Configure Google Drive
+      # 2. Connect to Hugging Face
+      - name: Configure Hugging Face
         env:
-          GDRIVE_CONFIG: ${{ secrets.GDRIVE_CONFIG }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_USER: ${{ secrets.HF_USER }}
+          HF_DATASET: ${{ secrets.HF_DATASET }}
         run: |
-          mkdir -p ~/.config/rclone
-          echo "$GDRIVE_CONFIG" > ~/.config/rclone/rclone.conf
-          echo "✅ Google Drive Configured!"
+          pip install -q huggingface-hub
+          echo "✅ Hugging Face Configured! Dataset: $HF_USER/$HF_DATASET"
 
-      # 3. Restore Backup (STRICT ORIGINAL LOGIC)
+      # 3. Restore Backup
       - name: 📥 Restore Backup
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_USER: ${{ secrets.HF_USER }}
+          HF_DATASET: ${{ secrets.HF_DATASET }}
         run: |
           mkdir -p server/minecraft-worlds
           mkdir -p server/plugins
           
-          echo "Checking Google Drive for previous backup..."
-          rclone copy gdrive:MinecraftServer/backup.zip server/ || echo "No backup found. Starting Fresh!"
+          echo "Checking Hugging Face for previous backup..."
+          huggingface-cli download "$HF_USER/$HF_DATASET" backup.zip \
+            --repo-type=dataset --local-dir=server/ || echo "No backup found. Starting Fresh!"
           
           if [ -f server/backup.zip ]; then
             echo "Backup found! Unzipping World & Plugins..."
@@ -429,14 +435,19 @@ jobs:
           echo "✅ Server process finished. Proceeding to backup..."
 
       # 8. Auto-Backup (Includes worlds, player data, and all plugin data like Ultimate Teams .yml files)
-      - name: 📤 Backup to Google Drive
+      - name: 📤 Backup to Hugging Face
         if: always()
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_USER: ${{ secrets.HF_USER }}
+          HF_DATASET: ${{ secrets.HF_DATASET }}
         run: |
           cd server
           shopt -s nullglob
           # The 'plugins' folder is zipped recursively, safely backing up all plugin configs, .yml files, and databases!
           zip -r backup.zip minecraft-worlds plugins *.json *.yml -x "*.jar"
-          rclone copy backup.zip gdrive:MinecraftServer/
+          huggingface-cli upload "$HF_USER/$HF_DATASET" backup.zip \
+            backup.zip --repo-type=dataset
           echo "✅ Backup Complete!"
 
       # 9. Auto-Restart Workflow

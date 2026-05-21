@@ -51,18 +51,24 @@
   ★ Timezone fix (IST) to prevent desync with Playit/Java
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  3. CURRENT SETUP (Google Drive)
+  3. CURRENT SETUP (Hugging Face Datasets)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Currently backups are stored on Google Drive using rclone.
-  Required GitHub Secret:
-    - GDRIVE_CONFIG  →  Your rclone config for Google Drive
+  The workflow now uses Hugging Face Datasets for backups.
+    - 100GB free storage
+    - Unlimited uploads & downloads
+    - No credit card needed
+    - Simple token auth via HF_TOKEN
 
-  Google Drive gives 15GB free but has daily upload/download limits
-  and can be slow.
+  Required GitHub Secrets:
+    - HF_TOKEN     →  Hugging Face access token (Write role)
+    - HF_USER      →  Your Hugging Face username
+    - HF_DATASET   →  Your dataset name (e.g., minecraft-backup)
+
+  GDRIVE_CONFIG is no longer needed.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  4. MIGRATING TO HUGGING FACE DATASETS (100GB FREE, NO CC)
+  4. SETTING UP HUGGING FACE (ONE-TIME SETUP)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Hugging Face Datasets is FREE with:
@@ -93,7 +99,8 @@
   6. COPY THE TOKEN NOW (shown once!)
 
   ─── STEP 4: Add GitHub Secrets ────────────────────────────────────
-  Go to your repo → Settings → Secrets and variables → Actions → Add:
+  Go to your repo → Settings → Secrets and variables → Actions → Add
+  these three secrets:
 
   ┌─────────────────────┬──────────────────────────────────────┐
   │ Secret Name         │ Value                                │
@@ -103,38 +110,13 @@
   │ HF_DATASET          │ minecraft-backup                     │
   └─────────────────────┴──────────────────────────────────────┘
 
-  ─── STEP 5: Update main.yml ───────────────────────────────────────
-  Replace the Google Drive config step with Hugging Face setup:
+  ─── STEP 5: Delete GDRIVE_CONFIG ─────────────────────────────────
+  Remove the old GDRIVE_CONFIG secret from your repo — it's no
+  longer used.
 
-  ```
-  - name: Configure Hugging Face
-    env:
-      HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      HF_USER: ${{ secrets.HF_USER }}
-      HF_DATASET: ${{ secrets.HF_DATASET }}
-    run: |
-      pip install -q huggingface-hub
-      echo "Hugging Face Configured! User: $HF_USER"
-      echo "Dataset: $HF_USER/$HF_DATASET"
-  ```
-
-  Then update the Restore Backup step:
-  ```
-  # Replace "rclone copy gdrive:..." with:
-  huggingface-cli download $HF_USER/$HF_DATASET backup.zip \
-    --repo-type=dataset --local-dir=server/ || echo "No backup found"
-  ```
-
-  And update the Backup step:
-  ```
-  # After zipping, replace "rclone copy ... gdrive:..." with:
-  huggingface-cli upload $HF_USER/$HF_DATASET server/backup.zip \
-    backup.zip --repo-type=dataset
-  ```
-
-  ─── STEP 6: Remove GDRIVE_CONFIG (optional) ──────────────────────
-  Once everything is working on HF, you can delete the GDRIVE_CONFIG
-  secret from GitHub.
+  ─── THAT'S IT! ───────────────────────────────────────────────────
+  main.yml already uses Hugging Face natively. Just add the three
+  secrets above and run the workflow.
 
   ─── WHY HUGGING FACE OVER GDRIVE? ────────────────────────────────
   Feature          Google Drive          Hugging Face Dataset
