@@ -45,7 +45,7 @@ jobs:
           HF_DATASET: ${{ secrets.HF_DATASET }}
         run: |
           pip install -q -U huggingface-hub
-          hf auth login --token "$HF_TOKEN" --add-to-git-credential 2>/dev/null || true
+          hf auth login --token "$HF_TOKEN" 2>/dev/null || true
           echo "✅ Hugging Face Configured! Dataset: $HF_USER/$HF_DATASET"
 
       # 3. Restore Backup
