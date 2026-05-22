@@ -302,8 +302,8 @@ jobs:
             mkdir -p server/plugins/DiscordSRV
             if [ -n "$DISCORD_TOKEN" ]; then
               echo "BotToken: \"$DISCORD_TOKEN\"" > server/plugins/DiscordSRV/config.yml
-              echo "Channels: {\"global\": \"1479509091155054712\"}" >> server/plugins/DiscordSRV/config.yml
-              echo "DiscordConsoleChannelId: \"1479518082295664730\"" >> server/plugins/DiscordSRV/config.yml
+              echo "Channels: {\"global\": \"1506952882958897232\"}" >> server/plugins/DiscordSRV/config.yml
+              echo "DiscordConsoleChannelId: \"1507266902152581200\"" >> server/plugins/DiscordSRV/config.yml
               echo "DiscordConsoleChannelLevels: [info]" >> server/plugins/DiscordSRV/config.yml
               echo "ConfigVersion: 1.26.0" >> server/plugins/DiscordSRV/config.yml
               echo "Experiment_JdbcAccountLinkBackend: true" >> server/plugins/DiscordSRV/config.yml
