@@ -37,3 +37,19 @@ Edit `plugins.txt` in the repo root. Supports two entry types:
 - **Direct URL** — `https://...` → downloaded as-is
 
 Drop custom `.jar` files in the `plugins/` folder to override any auto-downloaded plugin.
+
+## DiscordSRV setup
+
+After adding `DISCORD_TOKEN` secret, you also need to set your Discord channel IDs.  
+Edit `.github/workflows/main.yml` and change these two lines (around line 283):
+
+```yaml
+echo "Channels: {\"global\": \"1479509091155054712\"}" >> server/plugins/DiscordSRV/config.yml
+echo "DiscordConsoleChannelId: \"1479518082295664730\"" >> server/plugins/DiscordSRV/config.yml
+```
+
+Replace the numbers with your actual Discord channel IDs:
+
+1. Open Discord → Settings → Advanced → **Developer Mode** ON
+2. Right-click the channel you want → **Copy Channel ID**
+3. Paste it into the YAML, replacing the existing number (keep the quotes)
