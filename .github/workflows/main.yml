@@ -233,11 +233,14 @@ jobs:
                 [[ "$line" == \#* ]] && continue
 
                 if [[ "$line" == https://* ]] || [[ "$line" == http://* ]]; then
-                  # --- Direct URL ---
-                  DL_NAME=$(basename "${line%%\?*}")
-                  [[ "$DL_NAME" != *.* ]] && DL_NAME="${DL_NAME}.jar"
-                  echo "  🌐 Direct URL -> $DL_NAME..."
-                  wget -q -O "server/plugins/$DL_NAME" "$line" && echo "  ✅ $DL_NAME" || echo "  ❌ Failed: $line"
+                  # --- Direct URL (get real filename from Content-Disposition) ---
+                  REAL_NAME=$(wget --server-response --spider "$line" 2>&1 | grep -io 'filename=[^;]*' | head -1 | sed 's/filename=//i;s/"//g' | tr -d '\r')
+                  if [ -z "$REAL_NAME" ]; then
+                    REAL_NAME=$(basename "${line%%\?*}")
+                    [[ "$REAL_NAME" != *.* ]] && REAL_NAME="${REAL_NAME}.jar"
+                  fi
+                  echo "  🌐 $REAL_NAME..."
+                  wget -q -O "server/plugins/$REAL_NAME" "$line" && echo "  ✅ $REAL_NAME" || echo "  ❌ Failed: $line"
                 else
                   # --- Modrinth ID ---
                   echo "  ↪️ Fetching $line (Modrinth)..."
