@@ -258,6 +258,17 @@ jobs:
               cp -r plugins/* server/plugins/
             fi
           fi
+          
+          # --- List installed plugins ---
+          PLUGIN_COUNT=$(ls server/plugins/*.jar 2>/dev/null | wc -l)
+          echo ""
+          echo "📋 Installed Plugins ($PLUGIN_COUNT):"
+          if [ "$PLUGIN_COUNT" -gt 0 ]; then
+            for p in server/plugins/*.jar; do
+              echo "  • $(basename "$p" .jar)"
+            done
+          fi
+          echo ""
 
       # 5c. Save Cache (only on cache miss)
       - name: 💾 Save Paper Jar Cache
