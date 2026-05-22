@@ -68,6 +68,14 @@ jobs:
             unzip -o server/backup.zip -d server/
             rm server/backup.zip
             touch server/BACKUP_WAS_RESTORED
+            # Save persistent plugin data so cache restore doesn't overwrite it
+            mkdir -p server/.restored-plugin-data
+            for dir in server/plugins/*/; do
+              [ -d "$dir" ] || continue
+              plugin=$(basename "$dir")
+              cp -r "$dir" "server/.restored-plugin-data/$plugin"
+            done
+            echo "✅ Saved $(ls server/.restored-plugin-data 2>/dev/null | wc -l) plugin data folders from backup"
           fi
 
       # 4. Setup Server Logic (Privacy, Seed & End Portal)
@@ -281,6 +289,24 @@ jobs:
             done
           fi
           echo ""
+          
+          # --- Restore persistent plugin data from backup if cache missed it ---
+          # Only restores for plugins that don't have existing data (cache miss scenario),
+          # so it never overwrites fresher cached data on a cache hit.
+          if [ -d server/.restored-plugin-data ]; then
+            RESTORED=0
+            for dir in server/.restored-plugin-data/*/; do
+              [ -d "$dir" ] || continue
+              plugin=$(basename "$dir")
+              if [ ! -d "server/plugins/$plugin" ] || [ -z "$(ls -A "server/plugins/$plugin/" 2>/dev/null)" ]; then
+                cp -r "$dir" server/plugins/
+                echo "  ✅ $plugin persistent data restored"
+                RESTORED=$((RESTORED + 1))
+              fi
+            done
+            [ "$RESTORED" -gt 0 ] && echo "📂 Restored $RESTORED plugin data folders from backup"
+            rm -rf server/.restored-plugin-data
+          fi
 
       # 5c. Save Cache (only on cache miss)
       - name: 💾 Save Paper Jar Cache
