@@ -61,7 +61,7 @@ jobs:
           echo "Checking Hugging Face for previous backup..."
           wget -q -O server/backup.zip \
             "https://huggingface.co/datasets/$HF_USER/$HF_DATASET/resolve/main/backup.zip" \
-            --header="Authorization: Bearer $HF_TOKEN" || echo "No backup found. Starting Fresh!"
+            --header="Authorization: Bearer $HF_TOKEN" || { rm -f server/backup.zip; echo "No backup found. Starting Fresh!"; }
           
           if [ -f server/backup.zip ]; then
             echo "Backup found! Unzipping World & Plugins..."
