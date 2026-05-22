@@ -164,3 +164,33 @@
     - On cache hit: startup is instant (no re-download)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  7. DOWNLOADING YOUR WORLD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  The world is backed up to Hugging Face as backup.zip after each run.
+  To download it to your computer:
+
+  ─── USING HUGGING FACE WEBSITE ─────────────────────────────────────
+  1. Go to https://huggingface.co/datasets/<YOUR_USER>/<YOUR_DATASET>
+  2. Click the "Files and versions" tab
+  3. Click backup.zip → Download button (or the "↓" icon)
+  4. Unzip it — your world is inside minecraft-worlds/
+
+  ─── USING COMMAND LINE (HF CLI) ────────────────────────────────────
+  1. Install huggingface-hub:    pip install -U huggingface-hub
+  2. Login:                      hf auth login --token YOUR_TOKEN
+  3. Download:                   hf download <USER>/<DATASET> backup.zip
+                                 --repo-type dataset
+  4. Unzip:                      unzip backup.zip
+
+  ─── WHAT'S INSIDE backup.zip? ─────────────────────────────────────
+    minecraft-worlds/    → Your actual world files (region data, player data)
+    plugins/            → Plugin configs (DiscordSRV, Geyser, etc.)
+    *.json / *.yml      → Server config files (bukkit.yml, spigot.yml, etc.)
+    (Jar files are excluded — they're restored from cache or Modrinth)
+
+  ─── RESTORING A WORLD ──────────────────────────────────────────────
+  To restore a specific backup, just upload your backup.zip back to the
+  dataset (overwrite the existing one). Next server run will use it.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
