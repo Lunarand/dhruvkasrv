@@ -44,7 +44,8 @@ jobs:
           HF_USER: ${{ secrets.HF_USER }}
           HF_DATASET: ${{ secrets.HF_DATASET }}
         run: |
-          pip install -q huggingface-hub
+          pip install -q -U huggingface-hub
+          hf auth login --token "$HF_TOKEN" --add-to-git-credential 2>/dev/null || true
           echo "✅ Hugging Face Configured! Dataset: $HF_USER/$HF_DATASET"
 
       # 3. Restore Backup
@@ -58,8 +59,9 @@ jobs:
           mkdir -p server/plugins
           
           echo "Checking Hugging Face for previous backup..."
-          huggingface-cli download "$HF_USER/$HF_DATASET" backup.zip \
-            --repo-type=dataset --local-dir=server/ || echo "No backup found. Starting Fresh!"
+          wget -q -O server/backup.zip \
+            "https://huggingface.co/datasets/$HF_USER/$HF_DATASET/resolve/main/backup.zip" \
+            --header="Authorization: Bearer $HF_TOKEN" || echo "No backup found. Starting Fresh!"
           
           if [ -f server/backup.zip ]; then
             echo "Backup found! Unzipping World & Plugins..."
@@ -452,8 +454,7 @@ jobs:
           shopt -s nullglob
           # The 'plugins' folder is zipped recursively, safely backing up all plugin configs, .yml files, and databases!
           zip -r backup.zip minecraft-worlds plugins *.json *.yml -x "*.jar"
-          huggingface-cli upload "$HF_USER/$HF_DATASET" backup.zip \
-            backup.zip --repo-type=dataset
+          hf upload "$HF_USER/$HF_DATASET" backup.zip backup.zip --repo-type dataset
           echo "✅ Backup Complete!"
 
       # 9. Auto-Restart Workflow
