@@ -11,7 +11,8 @@
 #    https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
 
 LJNGWSvH
-dTPIQvjK
+
+https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
 
 P1OZGk5p
 NpvuJQoq
