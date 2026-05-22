@@ -475,8 +475,10 @@ jobs:
         run: |
           cd server
           shopt -s nullglob
-          # The 'plugins' folder is zipped recursively, safely backing up all plugin configs, .yml files, and databases!
-          zip -r backup.zip minecraft-worlds plugins *.json *.yml -x "*.jar"
+          # Backup everything: worlds, ALL plugin data (configs, databases, playerdata),
+          # server config files, bans, ops, whitelist — only .jar files are excluded
+          # (they're restored from cache or Modrinth)
+          zip -r backup.zip minecraft-worlds plugins *.json *.yml -x "plugins/*.jar"
           hf upload "$HF_USER/$HF_DATASET" backup.zip backup.zip --repo-type dataset
           echo "✅ Backup Complete!"
 

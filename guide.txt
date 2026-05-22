@@ -184,10 +184,12 @@
   4. Unzip:                      unzip backup.zip
 
   ─── WHAT'S INSIDE backup.zip? ─────────────────────────────────────
-    minecraft-worlds/    → Your actual world files (region data, player data)
-    plugins/            → Plugin configs (DiscordSRV, Geyser, etc.)
-    *.json / *.yml      → Server config files (bukkit.yml, spigot.yml, etc.)
-    (Jar files are excluded — they're restored from cache or Modrinth)
+    minecraft-worlds/    → World files (region data, playerdata, advancements, stats)
+    plugins/            → ALL plugin data (configs, databases, player registrations)
+                          including AuthMe, DiscordSRV, Geyser, etc.
+                          (Only .jar files are excluded — restored from cache)
+    *.json / *.yml      → Server configs, banned-players.json, ops.json,
+                          whitelist.json, usercache.json, bukkit/spigot/paper YMLs
 
   ─── RESTORING A WORLD ──────────────────────────────────────────────
   To restore a specific backup, just upload your backup.zip back to the
