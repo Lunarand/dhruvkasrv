@@ -17,3 +17,5 @@ P1OZGk5p
 NpvuJQoq
 3IEZ9vol
 UmLGoGij
+
+https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
