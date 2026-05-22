@@ -232,23 +232,32 @@ jobs:
                 [ -z "$line" ] && continue
                 [[ "$line" == \#* ]] && continue
 
-                echo "  ↪️ Fetching $line..."
-                RESP=$(curl -s "https://api.modrinth.com/v2/project/$line/version")
-                LATEST=$(echo "$RESP" | jq '[.[] | select(.version_type == "release")] | .[0]')
-                if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
-                  echo "  ⚠️ No release for $line, trying any version..."
-                  LATEST=$(echo "$RESP" | jq '.[0]')
-                fi
-                if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
-                  echo "  ❌ Invalid Modrinth ID: $line"
-                  continue
-                fi
+                if [[ "$line" == https://* ]] || [[ "$line" == http://* ]]; then
+                  # --- Direct URL ---
+                  DL_NAME=$(basename "${line%%\?*}")
+                  [[ "$DL_NAME" != *.* ]] && DL_NAME="${DL_NAME}.jar"
+                  echo "  🌐 Direct URL -> $DL_NAME..."
+                  wget -q -O "server/plugins/$DL_NAME" "$line" && echo "  ✅ $DL_NAME" || echo "  ❌ Failed: $line"
+                else
+                  # --- Modrinth ID ---
+                  echo "  ↪️ Fetching $line (Modrinth)..."
+                  RESP=$(curl -s "https://api.modrinth.com/v2/project/$line/version")
+                  LATEST=$(echo "$RESP" | jq '[.[] | select(.version_type == "release")] | .[0]')
+                  if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+                    echo "  ⚠️ No release for $line, trying any version..."
+                    LATEST=$(echo "$RESP" | jq '.[0]')
+                  fi
+                  if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+                    echo "  ❌ Invalid Modrinth ID: $line"
+                    continue
+                  fi
 
-                URL=$(echo "$LATEST" | jq -r '.files[0].url')
-                FILENAME=$(echo "$LATEST" | jq -r '.files[0].filename')
-                echo "  ⬇️ Downloading $FILENAME..."
-                wget -q -O "server/plugins/$FILENAME" "$URL"
-                echo "  ✅ $FILENAME"
+                  URL=$(echo "$LATEST" | jq -r '.files[0].url')
+                  FILENAME=$(echo "$LATEST" | jq -r '.files[0].filename')
+                  echo "  ⬇️ Downloading $FILENAME..."
+                  wget -q -O "server/plugins/$FILENAME" "$URL"
+                  echo "  ✅ $FILENAME"
+                fi
               done < "$GITHUB_WORKSPACE/plugins.txt"
             fi
 

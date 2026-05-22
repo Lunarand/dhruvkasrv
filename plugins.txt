@@ -1,10 +1,18 @@
 # Modrinth Plugin IDs
-# Paste one project ID/slug per line. Lines starting with # are ignored.
-# The workflow auto-downloads the latest RELEASE version for each.
+# Paste one item per line. Lines starting with # are ignored.
 #
-# Examples (uncomment to enable):
+# Supports two formats:
+#
+# 1) Modrinth project ID  → auto-fetches latest RELEASE version
+#    LJNGWSvH
+#    AANobbMI
+#
+# 2) Direct download URL  → downloaded as-is
+#    https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+
 LJNGWSvH
 wKkoqHrH
+
 P1OZGk5p
 NpvuJQoq
 3IEZ9vol

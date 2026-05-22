@@ -31,4 +31,9 @@ Add these in your repo: **Settings → Secrets and variables → Actions**
 
 ## Plugin auto-download
 
-Edit `plugins.txt` in the repo root. Add one [Modrinth](https://modrinth.com) project ID per line. The workflow fetches the latest release automatically. Drop custom `.jar` files in the `plugins/` folder to override.
+Edit `plugins.txt` in the repo root. Supports two entry types:
+
+- **Modrinth ID** — `LJNGWSvH` → fetches latest release via Modrinth API
+- **Direct URL** — `https://...` → downloaded as-is
+
+Drop custom `.jar` files in the `plugins/` folder to override any auto-downloaded plugin.
