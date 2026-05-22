@@ -240,7 +240,12 @@ jobs:
                   # --- Modrinth ID ---
                   echo "  ↪️ Fetching $line (Modrinth)..."
                   RESP=$(curl -s "https://api.modrinth.com/v2/project/$line/version")
-                  LATEST=$(echo "$RESP" | jq '[.[] | select(.version_type == "release")] | .[0]')
+                  # Prefer Paper/Spigot platform versions over Velocity/Bungee
+                  LATEST=$(echo "$RESP" | jq '[.[] | select(.version_type == "release" and ((.loaders | index("paper")) or (.loaders | index("spigot"))))] | .[0]')
+                  if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+                    echo "  ⚠️ No Paper/Spigot release for $line, trying any release..."
+                    LATEST=$(echo "$RESP" | jq '[.[] | select(.version_type == "release")] | .[0]')
+                  fi
                   if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
                     echo "  ⚠️ No release for $line, trying any version..."
                     LATEST=$(echo "$RESP" | jq '.[0]')
@@ -313,7 +318,7 @@ jobs:
             fi
           fi
 
-          if ls server/plugins/Geyser-Spigot*.jar 1> /dev/null 2>&1; then
+          if ls server/plugins/Geyser*.jar 1> /dev/null 2>&1; then
             mkdir -p server/plugins/Geyser-Spigot
             echo "above-bedrock-nether-building: true" > server/plugins/Geyser-Spigot/config.yml
             echo "max-build-height: 256" >> server/plugins/Geyser-Spigot/config.yml
