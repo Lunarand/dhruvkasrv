@@ -193,4 +193,15 @@
   To restore a specific backup, just upload your backup.zip back to the
   dataset (overwrite the existing one). Next server run will use it.
 
+  ─── CREATING A BRAND NEW WORLD ─────────────────────────────────────
+  1. Go to https://huggingface.co/datasets/<YOUR_USER>/<YOUR_DATASET>
+  2. Click "Files and versions" tab
+  3. Click the checkbox next to backup.zip → Delete (or the "⋮" menu)
+  4. Delete it permanently
+  5. Next server run: no backup found → fresh world generated
+     (If SEED secret is set, it'll use that seed for the new world)
+
+  OR via CLI:
+    hf upload <USER>/<DATASET> --repo-type dataset --delete backup.zip
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
