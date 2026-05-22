@@ -318,7 +318,7 @@ jobs:
             fi
           fi
 
-          if ls server/plugins/Geyser*.jar 1> /dev/null 2>&1; then
+          if ls server/plugins/Geyser-Spigot*.jar 1> /dev/null 2>&1; then
             mkdir -p server/plugins/Geyser-Spigot
             echo "above-bedrock-nether-building: true" > server/plugins/Geyser-Spigot/config.yml
             echo "max-build-height: 256" >> server/plugins/Geyser-Spigot/config.yml
