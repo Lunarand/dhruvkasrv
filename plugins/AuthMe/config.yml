@@ -1,0 +1,6 @@
+settings:
+  restrictions:
+    allowedNicknameCharacters: '[a-zA-Z0-9_. ]*'
+    timeout: 180
+  teleportation:
+    teleportUnAuthedToSpawn: true
