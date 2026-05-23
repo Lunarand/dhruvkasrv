@@ -46,10 +46,10 @@ jobs:
         run: |
           pip install -q -U huggingface-hub
           hf auth login --token "$HF_TOKEN" 2>/dev/null || true
-          echo "✅ Hugging Face Configured! Dataset: $HF_USER/$HF_DATASET"
+          echo "âœ… Hugging Face Configured! Dataset: $HF_USER/$HF_DATASET"
 
       # 3. Restore Backup
-      - name: 📥 Restore Backup
+      - name: ðŸ“¥ Restore Backup
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_USER: ${{ secrets.HF_USER }}
@@ -68,14 +68,15 @@ jobs:
             unzip -o server/backup.zip -d server/
             rm server/backup.zip
             touch server/BACKUP_WAS_RESTORED
-            # Save persistent plugin data so cache restore doesn't overwrite it
-            mkdir -p server/.restored-plugin-data
+            # Save ALL plugin data folders to a safe location BEFORE cache can overwrite them
+            # This includes AuthMe/authme.db, UltimateTeams data, Floodgate data, etc.
+            mkdir -p /tmp/plugin-data-backup
             for dir in server/plugins/*/; do
               [ -d "$dir" ] || continue
               plugin=$(basename "$dir")
-              cp -r "$dir" "server/.restored-plugin-data/$plugin"
+              cp -r "$dir" "/tmp/plugin-data-backup/$plugin"
             done
-            echo "✅ Saved $(ls server/.restored-plugin-data 2>/dev/null | wc -l) plugin data folders from backup"
+            echo "âœ… Saved $(ls /tmp/plugin-data-backup 2>/dev/null | wc -l) plugin data folders to safe location"
           fi
 
       # 4. Setup Server Logic (Privacy, Seed & End Portal)
@@ -150,14 +151,14 @@ jobs:
           # --- SEED LOGIC (STRICT ORIGINAL) ---
           if [ ! -f server/BACKUP_WAS_RESTORED ]; then
              if [ -n "$SEED_SECRET" ]; then
-                echo "✅ New World Detected! Applying Secret Seed..."
+                echo "âœ… New World Detected! Applying Secret Seed..."
                 echo "level-seed=$SEED_SECRET" >> server/server.properties
              fi
           fi
 
           # --- SERVER LOGO OPTIONAL ---
           if [ -f logo.png ]; then
-            echo "✅ Custom logo.png found! Applying as server logo..."
+            echo "âœ… Custom logo.png found! Applying as server logo..."
             cp logo.png server/server-icon.png
           fi
 
@@ -165,7 +166,7 @@ jobs:
           if [ -d java-pack ]; then
             JAVA_VP=$(find java-pack -name "*.zip" | head -n 1)
             if [ -n "$JAVA_VP" ]; then
-              echo "✅ Java Resource Pack detected: $JAVA_VP"
+              echo "âœ… Java Resource Pack detected: $JAVA_VP"
               PACK_NAME=$(basename "$JAVA_VP")
               PACK_NAME_ENCODED="${PACK_NAME// /%20}"
               PACK_SHA=$(sha1sum "$JAVA_VP" | awk '{print $1}')
@@ -181,21 +182,21 @@ jobs:
           if [ -d bedrock-pack ]; then
             mkdir -p server/plugins/Geyser-Spigot/packs
             if ls bedrock-pack/*.mcpack 1> /dev/null 2>&1 || ls bedrock-pack/*.zip 1> /dev/null 2>&1; then
-              echo "✅ Bedrock Resource Pack detected! Copying to Geyser..."
+              echo "âœ… Bedrock Resource Pack detected! Copying to Geyser..."
               cp bedrock-pack/*.mcpack server/plugins/Geyser-Spigot/packs/ 2>/dev/null || true
               cp bedrock-pack/*.zip server/plugins/Geyser-Spigot/packs/ 2>/dev/null || true
             fi
           fi
 
       # 5a. Restore Cache
-      - name: 🗃️ Restore Paper Jar Cache
+      - name: ðŸ—ƒï¸ Restore Paper Jar Cache
         id: cache-paper
         uses: actions/cache/restore@v4
         with:
           path: server/paper.jar
           key: paper-26.1.2-64
 
-      - name: 🗃️ Restore Plugins Cache
+      - name: ðŸ—ƒï¸ Restore Plugins Cache
         id: cache-plugins
         uses: actions/cache/restore@v4
         with:
@@ -208,19 +209,19 @@ jobs:
           TARGET_VERSION="26.1.2"
           
           if [ -f server/paper.jar ]; then
-            echo "✅ Paper jar restored from cache"
+            echo "âœ… Paper jar restored from cache"
           else
             if [ "$TARGET_VERSION" == "26.1.2" ]; then
-              echo "✅ Cache miss. Downloading Paper 26.1.2..."
+              echo "âœ… Cache miss. Downloading Paper 26.1.2..."
               wget -O server/paper.jar "https://fill-data.papermc.io/v1/objects/830d4eb5c15cbd802a9ec9f2f54eaaaeb9511958339aec983fd0c88bad21d940/paper-26.1.2-64.jar"
             else
               PROJECT_URL="https://api.papermc.io/v2/projects/paper"
               if curl -s $PROJECT_URL | jq -e ".versions | index(\"$TARGET_VERSION\")" > /dev/null; then
                 VERSION="$TARGET_VERSION"
-                echo "✅ Targeting version $VERSION"
+                echo "âœ… Targeting version $VERSION"
               else
                 VERSION=$(curl -s $PROJECT_URL | jq -r '.versions[-1]')
-                echo "⚠️ Version $TARGET_VERSION not found. Falling back to latest: $VERSION"
+                echo "âš ï¸ Version $TARGET_VERSION not found. Falling back to latest: $VERSION"
               fi
               BUILD=$(curl -s $PROJECT_URL/versions/$VERSION | jq '.builds[-1]')
               wget -O server/paper.jar "$PROJECT_URL/versions/$VERSION/builds/$BUILD/downloads/paper-$VERSION-$BUILD.jar"
@@ -228,13 +229,13 @@ jobs:
           fi
           
           if ls server/plugins/*.jar 1>/dev/null 2>&1; then
-            echo "✅ Plugins restored from cache, skipping download"
+            echo "âœ… Plugins restored from cache, skipping download"
           else
             mkdir -p server/plugins
 
             # --- Modrinth auto-download ---
             if [ -f "$GITHUB_WORKSPACE/plugins.txt" ]; then
-              echo "📦 Downloading plugins from Modrinth..."
+              echo "ðŸ“¦ Downloading plugins from Modrinth..."
               while IFS= read -r raw_line || [ -n "$raw_line" ]; do
                 line=$(echo "$raw_line" | xargs)
                 [ -z "$line" ] && continue
@@ -242,81 +243,87 @@ jobs:
 
                 if [[ "$line" == https://* ]] || [[ "$line" == http://* ]]; then
                   # --- Direct URL (--content-disposition gets the real filename from server) ---
-                  echo "  🌐 Downloading from URL..."
-                  wget -q --content-disposition -P server/plugins/ "$line" && echo "  ✅ Downloaded" || echo "  ❌ Failed: $line"
+                  echo "  ðŸŒ Downloading from URL..."
+                  wget -q --content-disposition -P server/plugins/ "$line" && echo "  âœ… Downloaded" || echo "  âŒ Failed: $line"
                 else
                   # --- Modrinth ID ---
-                  echo "  ↪️ Fetching $line (Modrinth)..."
+                  echo "  â†ªï¸ Fetching $line (Modrinth)..."
                   RESP=$(curl -s "https://api.modrinth.com/v2/project/$line/version")
                   # Prefer Paper/Spigot platform versions over Velocity/Bungee
                   LATEST=$(echo "$RESP" | jq '[.[] | select(.version_type == "release" and ((.loaders | index("paper")) or (.loaders | index("spigot"))))] | .[0]')
                   if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
-                    echo "  ⚠️ No Paper/Spigot release for $line, trying any release..."
+                    echo "  âš ï¸ No Paper/Spigot release for $line, trying any release..."
                     LATEST=$(echo "$RESP" | jq '[.[] | select(.version_type == "release")] | .[0]')
                   fi
                   if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
-                    echo "  ⚠️ No release for $line, trying any version..."
+                    echo "  âš ï¸ No release for $line, trying any version..."
                     LATEST=$(echo "$RESP" | jq '.[0]')
                   fi
                   if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
-                    echo "  ❌ Invalid Modrinth ID: $line"
+                    echo "  âŒ Invalid Modrinth ID: $line"
                     continue
                   fi
 
                   URL=$(echo "$LATEST" | jq -r '.files[0].url')
                   FILENAME=$(echo "$LATEST" | jq -r '.files[0].filename')
-                  echo "  ⬇️ Downloading $FILENAME..."
+                  echo "  â¬‡ï¸ Downloading $FILENAME..."
                   wget -q -O "server/plugins/$FILENAME" "$URL"
-                  echo "  ✅ $FILENAME"
+                  echo "  âœ… $FILENAME"
                 fi
               done < "$GITHUB_WORKSPACE/plugins.txt"
             fi
 
             # --- Repo plugins fallback ---
             if [ -d plugins ]; then
-              echo "📦 Copying plugins from repo..."
+              echo "ðŸ“¦ Copying plugins from repo..."
               cp -r plugins/* server/plugins/
             fi
+          fi
+          
+          # --- CRITICAL: Restore plugin data from backup AFTER cache ---
+          # The cache only contains .jar files and empty folders â€” it never has live
+          # plugin databases like authme.db, UltimateTeams data, Floodgate linked accounts etc.
+          # So we ALWAYS overwrite plugin data folders with the ones saved from the backup,
+          # but we NEVER delete .jar files the cache just gave us.
+          if [ -d /tmp/plugin-data-backup ]; then
+            echo "ðŸ“‚ Restoring plugin data from backup over cache..."
+            for dir in /tmp/plugin-data-backup/*/; do
+              [ -d "$dir" ] || continue
+              plugin=$(basename "$dir")
+              mkdir -p "server/plugins/$plugin"
+              # Copy everything EXCEPT .jar files (we keep the cache jars)
+              find "$dir" -not -name "*.jar" -not -type d | while read file; do
+                rel="${file#$dir}"
+                dest="server/plugins/$plugin/$rel"
+                mkdir -p "$(dirname "$dest")"
+                cp "$file" "$dest"
+              done
+              echo "  âœ… Restored data for: $plugin"
+            done
+            rm -rf /tmp/plugin-data-backup
+            echo "âœ… Plugin data restore complete â€” AuthMe, UltimateTeams and all plugin databases preserved!"
           fi
           
           # --- List installed plugins ---
           PLUGIN_COUNT=$(ls server/plugins/*.jar 2>/dev/null | wc -l)
           echo ""
-          echo "📋 Installed Plugins ($PLUGIN_COUNT):"
+          echo "ðŸ“‹ Installed Plugins ($PLUGIN_COUNT):"
           if [ "$PLUGIN_COUNT" -gt 0 ]; then
             for p in server/plugins/*.jar; do
-              echo "  • $(basename "$p" .jar)"
+              echo "  â€¢ $(basename "$p" .jar)"
             done
           fi
           echo ""
-          
-          # --- Restore persistent plugin data from backup if cache missed it ---
-          # Only restores for plugins that don't have existing data (cache miss scenario),
-          # so it never overwrites fresher cached data on a cache hit.
-          if [ -d server/.restored-plugin-data ]; then
-            RESTORED=0
-            for dir in server/.restored-plugin-data/*/; do
-              [ -d "$dir" ] || continue
-              plugin=$(basename "$dir")
-              if [ ! -d "server/plugins/$plugin" ] || [ -z "$(ls -A "server/plugins/$plugin/" 2>/dev/null)" ]; then
-                cp -r "$dir" server/plugins/
-                echo "  ✅ $plugin persistent data restored"
-                RESTORED=$((RESTORED + 1))
-              fi
-            done
-            [ "$RESTORED" -gt 0 ] && echo "📂 Restored $RESTORED plugin data folders from backup"
-            rm -rf server/.restored-plugin-data
-          fi
 
       # 5c. Save Cache (only on cache miss)
-      - name: 💾 Save Paper Jar Cache
+      - name: ðŸ’¾ Save Paper Jar Cache
         if: steps.cache-paper.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: server/paper.jar
           key: paper-26.1.2-64
 
-      - name: 💾 Save Plugins Cache
+      - name: ðŸ’¾ Save Plugins Cache
         if: steps.cache-plugins.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
@@ -324,8 +331,8 @@ jobs:
           key: plugins-${{ hashFiles('plugins/**') }}-${{ hashFiles('plugins.txt') }}
 
       # 6. Configure Plugins (DiscordSRV & Bedrock Nether)
-      # NOTE: All config steps are safe — missing jars or empty tokens will NOT crash the server.
-      - name: 🔧 Configure Plugins
+      # NOTE: All config steps are safe â€” missing jars or empty tokens will NOT crash the server.
+      - name: ðŸ”§ Configure Plugins
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
         run: |
@@ -338,9 +345,9 @@ jobs:
               echo "DiscordConsoleChannelLevels: [info]" >> server/plugins/DiscordSRV/config.yml
               echo "ConfigVersion: 1.26.0" >> server/plugins/DiscordSRV/config.yml
               echo "Experiment_JdbcAccountLinkBackend: true" >> server/plugins/DiscordSRV/config.yml
-              echo "  ✅ DiscordSRV configured"
+              echo "  âœ… DiscordSRV configured"
             else
-              echo "  ⏭️ DiscordSRV jar found but DISCORD_TOKEN not set — skipping config. Server runs without Discord bridge."
+              echo "  â­ï¸ DiscordSRV jar found but DISCORD_TOKEN not set â€” skipping config. Server runs without Discord bridge."
             fi
           fi
 
@@ -358,7 +365,7 @@ jobs:
           fi
 
       # 7. Start Server & Tunnel (Combined to prevent GitHub killing background processes)
-      - name: 🟢 Start Server
+      - name: ðŸŸ¢ Start Server
         env:
           PLAYIT_SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
@@ -367,7 +374,7 @@ jobs:
           if [ -z "$PLAYIT_SECRET" ]; then
             echo ""
             echo "================================================================="
-            echo "❌ ERROR: NO PLAYIT_SECRET FOUND!"
+            echo "âŒ ERROR: NO PLAYIT_SECRET FOUND!"
             echo "================================================================="
             echo "1. Go to https://playit.gg and create an account"
             echo "2. Download and run the Playit agent on your own computer first to claim it"
@@ -388,18 +395,18 @@ jobs:
           
           # 2. Show Connection Info
           echo "------------------------------------------"
-          echo "🚀 YOUR MINECRAFT SERVER IS ONLINE!"
+          echo "ðŸš€ YOUR MINECRAFT SERVER IS ONLINE!"
           echo "------------------------------------------"
           JAVA_IP=$(grep -oE '[a-zA-Z0-9.-]+\.joinmc\.link' playit_log.txt | head -n 1)
-          echo "🖥️ JAVA IP: ${JAVA_IP:-Check playit.gg dashboard}"
+          echo "ðŸ–¥ï¸ JAVA IP: ${JAVA_IP:-Check playit.gg dashboard}"
           BEDROCK_INFO=$(grep -oE '[a-zA-Z0-9.-]+\.ply\.gg:[0-9]+' playit_log.txt | head -n 1)
           if [ -z "$JAVA_IP" ] && [ -z "$PLAYIT_SECRET" ]; then
-             echo "⚠️ SERVER HAS NO IP! YOU MUST CLICK THE CLAIM LINK ABOVE ⚠️"
+             echo "âš ï¸ SERVER HAS NO IP! YOU MUST CLICK THE CLAIM LINK ABOVE âš ï¸"
           else
-             echo "📱 BEDROCK: ${BEDROCK_INFO:-Check playit.gg dashboard}"
+             echo "ðŸ“± BEDROCK: ${BEDROCK_INFO:-Check playit.gg dashboard}"
           fi
           echo "------------------------------------------"
-          echo "🎮 Logs below are only from Minecraft..."
+          echo "ðŸŽ® Logs below are only from Minecraft..."
           
           cd server
           
@@ -416,7 +423,7 @@ jobs:
           WARNED_1="false"
           WARNED_COUNTDOWN="false"
           
-          echo "⏳ Server started. Monitoring for 5.5 hours or manual stop..."
+          echo "â³ Server started. Monitoring for 5.5 hours or manual stop..."
           
           while kill -0 $SERVER_PID 2>/dev/null; do
             CURRENT_TIME=$(date +%s)
@@ -424,30 +431,30 @@ jobs:
             
             # --- WARNING 1: 30 Minutes Left (at 18000s) ---
             if [ $ELAPSED -ge 18000 ] && [ "$WARNED_30" == "false" ]; then
-                echo "say ⚠️ NOTICE: Server will shutdown in 30 minutes!" > /proc/$SERVER_PID/fd/0
+                echo "say âš ï¸ NOTICE: Server will shutdown in 30 minutes!" > /proc/$SERVER_PID/fd/0
                 WARNED_30="true"
             fi
 
             # --- WARNING 2: 1 Minute Left (at 19740s) ---
             if [ $ELAPSED -ge 19740 ] && [ "$WARNED_1" == "false" ]; then
-                echo "say 🚨 URGENT: Server will shutdown in 1 MINUTE!" > /proc/$SERVER_PID/fd/0
+                echo "say ðŸš¨ URGENT: Server will shutdown in 1 MINUTE!" > /proc/$SERVER_PID/fd/0
                 WARNED_1="true"
             fi
 
             # --- WARNING 3: 15s Countdown (at 19785s) ---
             if [ $ELAPSED -ge 19785 ] && [ "$WARNED_COUNTDOWN" == "false" ]; then
                 WARNED_COUNTDOWN="true"
-                echo "say 🚨 Countdown started..." > /proc/$SERVER_PID/fd/0
+                echo "say ðŸš¨ Countdown started..." > /proc/$SERVER_PID/fd/0
                 for i in {15..1}; do
                    echo "say Server shutting down in $i..." > /proc/$SERVER_PID/fd/0
                    sleep 1
                 done
-                echo "say 👋 Server is closing now!" > /proc/$SERVER_PID/fd/0
+                echo "say ðŸ‘‹ Server is closing now!" > /proc/$SERVER_PID/fd/0
             fi
 
             # If timer runs out (5.5 hours)
             if [ $ELAPSED -ge $MAX_DURATION ]; then
-              echo "⏰ Time limit reached (5.5h). Initiating shutdown..."
+              echo "â° Time limit reached (5.5h). Initiating shutdown..."
               
               # Try Graceful Stop
               echo "stop" > /proc/$SERVER_PID/fd/0
@@ -462,7 +469,7 @@ jobs:
               
               # If still running after 60s, FORCE KILL
               if kill -0 $SERVER_PID 2>/dev/null; then
-                 echo "⚠️ Server stuck! Force killing to ensure backup..."
+                 echo "âš ï¸ Server stuck! Force killing to ensure backup..."
                  kill -9 $SERVER_PID
               fi
               break
@@ -471,7 +478,7 @@ jobs:
             PLAYIT_CHECK=$((ELAPSED % 60))
             if [ "$PLAYIT_CHECK" -lt 11 ]; then
               if ! kill -0 $PLAYIT_PID 2>/dev/null; then
-                echo "⚠️ Playit tunnel crashed! Here is the error log:"
+                echo "âš ï¸ Playit tunnel crashed! Here is the error log:"
                 cat $GITHUB_WORKSPACE/playit_log.txt || echo "No log found."
                 echo "Restarting Playit..."
                 if [ -z "$PLAYIT_SECRET" ]; then
@@ -489,10 +496,10 @@ jobs:
           
           # 3. Final Cleanup
           wait $SERVER_PID || true
-          echo "✅ Server process finished. Proceeding to backup..."
+          echo "âœ… Server process finished. Proceeding to backup..."
 
       # 8. Auto-Backup (Includes worlds, player data, and all plugin data like Ultimate Teams .yml files)
-      - name: 📤 Backup to Hugging Face
+      - name: ðŸ“¤ Backup to Hugging Face
         if: always()
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -502,21 +509,21 @@ jobs:
           cd server
           shopt -s nullglob
           # Backup everything: worlds, ALL plugin data (configs, databases, playerdata),
-          # server config files, bans, ops, whitelist — only .jar files are excluded
+          # server config files, bans, ops, whitelist â€” only .jar files are excluded
           # (they're restored from cache or Modrinth)
           zip -r backup.zip minecraft-worlds plugins *.json *.yml -x "plugins/*.jar"
           hf upload "$HF_USER/$HF_DATASET" backup.zip backup.zip --repo-type dataset
-          echo "✅ Backup Complete!"
+          echo "âœ… Backup Complete!"
 
       # 9. Auto-Restart Workflow
-      - name: 🔄 Auto-Restart Server
+      - name: ðŸ”„ Auto-Restart Server
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Triggering next workflow run to restart the server..."
           gh workflow run main.yml --ref ${{ github.ref_name }}
-          echo "✅ Restart triggered successfully! Thanks for using @GamingBurst007's script!"
+          echo "âœ… Restart triggered successfully! Thanks for using @GamingBurst007's script!"
 
 # --- End of Workflow ---
 # Developed by @GamingBurst007 (Discord/Insta)
